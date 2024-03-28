@@ -3,4 +3,6 @@ include:
   cubical
   .
 depend:
+  standard-library
+  cubical
 flags: --cubical 
