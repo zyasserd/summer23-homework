@@ -209,7 +209,7 @@ compose : {A : Type} {B : Type} {C : Type}
     → (A → B)
     → (A → C)
 -- Exercise:
-compose g f = {!!}
+compose g f a = g (f a)
 ```
 
 Agda considers definitions with underscores specially, and lets us
@@ -226,7 +226,7 @@ flip : {A B C : Type}
      → (A → B → C)
      → (B → A → C)
 -- Exercise:
-flip = {!!}
+flip f b a = f a b
 
 -- Should use the provided function on the argument twice.
 apply-twice : {A : Type}
@@ -234,7 +234,7 @@ apply-twice : {A : Type}
      → A
      → A
 -- Exercise:
-apply-twice = {!!}
+apply-twice f a = f (f a)
 ```
 
 * Pen and paper exercise: Check that `f ∘ id` and `id ∘ f` act the
@@ -351,13 +351,13 @@ curry3 : {A B C D : Type}
   → (((A × B) × C) → D)
   → (A → B → C → D)
 -- Exercise:
-curry3 f = {!!}
+curry3 f a b c = f ((a , b) , c)
 
 uncurry3 : {A B C D : Type}
   → (A → B → C → D)
   → (((A × B) × C) → D)
 -- Exercise:
-uncurry3 f = {!!}
+uncurry3 f p = f (fst (fst p)) (snd (fst p)) (snd p)
 ```
 
 Just as type theory generalises function types to dependent function
@@ -393,13 +393,14 @@ uncurry : {A : Type} → {B : A → Type} → {C : (x : A) → B x → Type}
   → ((x : A) → (y : B x) → C x y)
   → (p : Σ[ x ∈ A ] B x) → C (fst p) (snd p)
 -- Exercise
-uncurry f p = {!!}
+uncurry f p = f (fst p) (snd p)
+
 
 curry : {A : Type} → {B : A → Type} → {C : (x : A) → B x → Type}
   → ((p : Σ[ x ∈ A ] B x) → C (fst p) (snd p))
   → (x : A) → (y : B x) → C x y
 -- Exercise
-curry f x y = {!!}
+curry f x y = f (x , y)
 ```
 
 Finally in this section, we have the "universal mapping property" of
@@ -412,7 +413,7 @@ functions `C → A` and `C → B`.
       → (C → B)
       → (C → A × B)
 -- Exercise:
-×-ump = {!!}
+×-ump f g c = (f c , g c)
 ```
 
 We will have a lot to say about universal properties in this course.

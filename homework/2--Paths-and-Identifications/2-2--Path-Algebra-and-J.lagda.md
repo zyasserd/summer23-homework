@@ -1,9 +1,10 @@
 # Homework 2-2: Path Algebra and J
 ```
+{-# OPTIONS --allow-unsolved-metas #-}
 module homework.2--Paths-and-Identifications.2-2--Path-Algebra-and-J where
 
 open import Cubical.Core.Primitives public
-open import Cubical.Foundations.Function using (idfun ; _∘_)
+open import Cubical.Foundations.Function using (idfun ; _∘_ ; _$_)
 
 
 open import homework.1--Type-Theory.1-1--Types-and-Functions
@@ -57,10 +58,8 @@ principle for paths:
 -- To see what the expression evaluates to,
 -- uncomment this block and move the cursor into the goal
 -- and press `C-c C-n`. (`C-n` for "normalise").
-{-
-_ : I
-_ = {! ~ i0!}
--}
+-- _ : I
+-- _ = {! ~ i0!}
 
 sym : x ≡ y → y ≡ x
 sym p i = p (~ i)
@@ -83,7 +82,8 @@ the transitivity of equality. Here is a reasonable definition:
 
 ```
 trans : x ≡ y → y ≡ z → x ≡ z
-trans {x = x} p q = subst (λ k → x ≡ k) q p
+trans {x = x} p q = subst (x ≡_) q p
+-- trans {z = z} p q = subst (_≡ z) p ?
 ```
 
 However, it would be difficult to reason about the paths-between-paths
@@ -121,7 +121,7 @@ following type family:
 a-0≡a-1 : {A : Type ℓ} {a00 a01 a10 a11 : A}
           (a-0 : a00 ≡ a10) (a-1 : a01 ≡ a11)
         → I → Type ℓ
-a-0≡a-1 a-0 a-1 i = a-0 i ≡ a-1 i
+a-0≡a-1 a-0 a-1 i = (a-0 i ≡ a-1 i)
 ```
 Note that:
 
@@ -162,18 +162,18 @@ is the obvious one, when `B` depends on `A`. The definitions are the
 same as in the non-dependent case, so try to fill in the `PathP` type.
 
 ```
-module _ {A : Type ℓ} {B : A → Type ℓ'}
+module PairPath {A : Type ℓ} {B : A → Type ℓ'}
   {x y : Σ A B}
   where
 
   -- Exercise:
-  ΣPathP' : Σ[ p ∈ (fst x ≡ fst y) ] PathP {!!} {!!} {!!}
+  ΣPathP' : Σ[ p ∈ (fst x ≡ fst y) ] PathP ((λ i → B (p i))) (snd x) (snd y)
           → x ≡ y
   ΣPathP' eq i = fst eq i , snd eq i
 
   -- Exercise:
   PathPΣ' : x ≡ y
-          → Σ[ p ∈ (fst x ≡ fst y) ] PathP {!!} {!!} {!!}
+          → Σ[ p ∈ (fst x ≡ fst y) ] PathP ((λ i → B (p i))) (snd x) (snd y)
   PathPΣ' eq = (λ i → fst (eq i)) , (λ i → snd (eq i))
 
 ```
@@ -187,8 +187,10 @@ module _ {A : I → Type ℓ} {B : (i : I) → A i → Type ℓ'}
   {x : Σ (A i0) (B i0)} {y : Σ (A i1) (B i1)}
   where
 
+  -- PathP A ()
+
   -- Exercise:
-  ΣPathP : Σ[ p ∈ PathP {!!} {!!} {!!} ] PathP {!!} {!!} {!!}
+  ΣPathP : Σ[ p ∈ PathP A (fst x) (fst y) ] PathP (λ i → B i (p i)) (snd x) (snd y)
          → PathP (λ i → Σ (A i) (B i)) x y
   ΣPathP eq i = fst eq i , snd eq i
 
@@ -206,8 +208,8 @@ identical but the type improves:
 -- Exercise:
 depFunExt : {B : A → I → Type}
   {f : (x : A) → B x i0} {g : (x : A) → B x i1}
-  → ((x : A) → PathP {!!} {!!} {!!})
-  → PathP {!!} f g
+  → ((x : A) → PathP (λ i → B x i) (f x) (g x))
+  → PathP (λ i → (x : A) → B x i) f g
 depFunExt p i x = p x i
 ```
 
@@ -235,6 +237,18 @@ Here's the picture again:
        a00 — — — > a10         ∙ — >
              a-0                 i
 
+```
+reflSquare1 : {A : Type ℓ} {a0 a1 : A}
+              → (p : a0 ≡ a1)
+              → Square refl refl p p
+reflSquare1 p = λ i j → p i
+
+reflSquare2 : {A : Type ℓ} {a0 a1 : A}
+              → (p : a0 ≡ a1)
+              → Square p p refl refl
+reflSquare2 p = λ i j → p j
+```
+
 To define interesting squares, we'll need to axiomatize a bit more
 structure from the unit interval $[0,1]$. The functions
 $max, min : [0, 1] × [0, 1] → [0, 1]$ are quite useful for constructing
@@ -250,16 +264,9 @@ definitionally.
 
 ```
 -- Uncomment this block and try normalising the following expressions.
-{-
-_ : I
-_ = {! i0 ∨ i0!}
-_ : I
-_ = {! i0 ∨ i1!}
-_ : I
-_ = {! i0 ∧ i0!}
-_ : I
-_ = {! i0 ∧ i1!}
--}
+blah1 : I
+blah1 = {! i0 ∨ i0!}
+
 ```
 
 There are a few additional equalities which hold for `max` and `min`
@@ -326,29 +333,29 @@ Below we have drawn some more squares. Write them down in Cubical Agda
 below.
 
            p⁻¹
-       x - - - > x
+       y - - - > x
        ^         ^
      p |         | refl            ^
        |         |               j |
-       x — — — > y                 ∙ — >
+       x — — — > x                 ∙ — >
           refl                       i
 
 ```
 connectionEx1 : (p : x ≡ y) → Square p refl refl (sym p)
--- Exercise
-connectionEx1 p i j = {!!}
+connectionEx1 p i j = p (~ i ∧ j)
 ```
             p
-        y - - - > y
+        x - - - > y
         ^         ^
     p⁻¹ |         | refl            ^
         |         |               j |
-        y — — — > x                 ∙ — >
+        y — — — > y                 ∙ — >
            refl                       i
 ```
 connectionEx2 : (p : x ≡ y) → Square (sym p) refl refl p
--- Exercise
-connectionEx2 p i j = {!!}
+-- connectionEx2 p i j = p (~ (~ i ∧ j))
+-- connectionEx2 p i j = (sym p) (~ i ∧ j)
+connectionEx2 p = connectionEx1 (sym p)
 ```
 
 Our definition of ℤ is a little janky and off kilter --- we treat the
@@ -370,21 +377,32 @@ isomorphic to the ones we had before.
 ```
 ℤ'→ℤ : ℤ' → ℤ
 -- Exercise
-ℤ'→ℤ z = {!!}
+ℤ'→ℤ (pos' x) = pos x
+ℤ'→ℤ (neg' zero) = pos zero
+ℤ'→ℤ (neg' (suc x)) = negsuc x
+ℤ'→ℤ (poszero≡negzero i) = refl i
 
 ℤ→ℤ' : ℤ → ℤ'
 -- Exercise
-ℤ→ℤ' z = {!!}
+ℤ→ℤ' (pos n) = pos' n
+ℤ→ℤ' (negsuc n) = neg' (suc n)
 
 ℤIsoℤ' : Iso ℤ ℤ'
 -- Exercise
 ℤIsoℤ' = iso ℤ→ℤ' ℤ'→ℤ s r
   where
     s : section ℤ→ℤ' ℤ'→ℤ
-    s z = {!!}
+    s (pos' x) = refl
+    s (neg' zero) = poszero≡negzero
+    s (neg' (suc x)) = refl
+    s (poszero≡negzero i) j = poszero≡negzero (i ∧ j)
+    -- ! understand
+    -- i0 => pos' zero ≡ pos' zero
+    -- i1 => neg' zero ≡ neg' zero
 
     r : retract ℤ→ℤ' ℤ'→ℤ
-    r z = {!!}
+    r (pos n) = refl
+    r (negsuc n) = refl
 ```
 
 
@@ -395,9 +413,11 @@ fundamental but not so well known principle of identity: Martin Löf's
 J rule.
 
 ```
-J : (P : ∀ y → x ≡ y → Type ℓ) (r : P x refl)
-    (p : x ≡ y) → P y p
-J P r p = transport (λ i → P (p i) (λ j → p (i ∧ j))) r
+J : (P : ∀ y → x ≡ y → Type ℓ)
+    (base-case : P x refl)
+    {y : A} (p : x ≡ y) → P y p
+J P base-case p = transport ( λ i → P (p i) (λ j → p (i ∧ j)) ) base-case
+-- establishing a path between 
 ```
 
 If we think of the dependent type `P` as a property, then the J rule
@@ -426,6 +446,9 @@ a path and not a definitional equality.
 transportRefl : (x : A) → transport refl x ≡ x
 transportRefl {A = A} x i = transp (λ _ → A) i x
 
+substRefl : {P : A → Type ℓ'} (x : A) (p : P x) → subst P refl p ≡ p
+substRefl x p = transportRefl p
+
 JRefl : (P : ∀ y → x ≡ y → Type ℓ) (r : P x refl)
       → J P r refl ≡ r
 JRefl P r = transportRefl r
@@ -444,18 +467,26 @@ iff→Iso p s r = iso (fst p) (snd p) s r
 ≡Iso≡Bool : (a b : Bool) → Iso (a ≡ b) (a ≡Bool b)
 ≡Iso≡Bool a b = iff→Iso (≡iff≡Bool a b) (s a b) (r a b)
   where
+    -- ≡iff≡Bool : (a b : Bool) → (a ≡ b) iffP (a ≡Bool b)
     s : (x y : Bool) → section (fst (≡iff≡Bool x y)) (snd (≡iff≡Bool x y))
-    s p = {!!}
+    s true true tt = refl
+    s false false tt = refl
 
     r : (x y : Bool) → retract (fst (≡iff≡Bool x y)) (snd (≡iff≡Bool x y))
-    r true y p =  J motive refl p
+    r true y p =  J motive base-case p
       where
         motive : ∀ z q → Type
-        motive z q = {!!}
-    r false y p = J motive refl p
+        motive z q = snd (≡iff≡Bool true z) (fst (≡iff≡Bool true z) q) ≡ q
+
+        base-case : motive true refl
+        base-case = refl
+    r false y p = J motive base-case p
       where
         motive : ∀ z q → Type
-        motive z q = {!!}
+        motive z q = snd (≡iff≡Bool false z) (fst (≡iff≡Bool false z) q) ≡ q
+
+        base-case : motive false refl
+        base-case = refl
 ```
 
 We similarly promote `≡iff≡ℕ` to an isomorphism, but it will be easier
@@ -496,7 +527,8 @@ then it should be easy to map out of it.
 ```
 -- Exercise:
 decodeℕ : (n m : ℕ) → codeℕ n m → n ≡ m
-decodeℕ n m c = {!!}
+decodeℕ zero zero c = refl
+decodeℕ (suc n) (suc m) c = cong suc (decodeℕ n m c)
 ```
 
 Then we prove that `encode` and `decode` form an isomorphism. This
@@ -509,15 +541,29 @@ was defined by substituting over something defined for a reflexive
 case.
 
 ```
+-- J : (P : ∀ y → x ≡ y → Type ℓ)
+--     (base-case : P x refl)
+--     {y : A} (p : x ≡ y) → P y p
+
 -- Exercise:
 ≡Iso≡ℕ : (n m : ℕ) → Iso (n ≡ m) (n ≡ℕ m)
 ≡Iso≡ℕ n m = iso (encodeℕ n m) (decodeℕ n m) (s n m) (r n m)
   where
     s : (x y : ℕ) → section (encodeℕ x y) (decodeℕ x y)
-    s x y p = {!!}
+    s zero zero tt = refl
+    s (suc x) (suc y) p = s x y p
 
     r : (x y : ℕ) → retract (encodeℕ x y) (decodeℕ x y)
-    r x y p = {!!}
+    r x y p = J P (base-case) p
+      where 
+        P : (z : ℕ) → (q : x ≡ z) → Type
+        P z q = decodeℕ x z (encodeℕ x z q) ≡ q
+
+        base-case : {z : ℕ} → decodeℕ z z (encodeℕ z z refl) ≡ refl
+        base-case {zero} = refl
+        -- decodeℕ (suc z) (suc z) $ encodeℕ (suc z) (suc z) refl
+        -- cong suc $ decodeℕ z z $ (suc z) ≡ℕ (suc z)
+        base-case {suc z} = \ i → cong suc (base-case {z} i)
 ```
 
 Let's do the encode-decode method again, but for coproducts.
@@ -528,23 +574,29 @@ Let's do the encode-decode method again, but for coproducts.
 ≡Iso≡⊎ {A = A} {B = B} x y = iso (encode x y) (decode x y) (s x y) (r x y)
   where
     codeRefl : (c : A ⊎ B) → c ≡⊎ c
-    codeRefl c = {!!}
+    codeRefl (inl a) = refl
+    codeRefl (inr b) = refl
 
     encode : (x y : A ⊎ B) → x ≡ y → x ≡⊎ y
-    encode x y p = {!!}
+    encode x y p = subst (x ≡⊎_) p (codeRefl x)
 
     encodeRefl : (c : A ⊎ B)  → encode c c refl ≡ codeRefl c
-    encodeRefl c = {!!}
+    encodeRefl c = substRefl (c ≡⊎_) (codeRefl c)
 
     decode : (x y : A ⊎ B) → x ≡⊎ y → x ≡ y
-    decode x y p = {!!}
+    decode (inl a) (inl a') p = cong inl p
+    decode (inr b) (inr b') p = cong inr p
 
     decodeRefl : (c : A ⊎ B) → decode c c (codeRefl c) ≡ refl
-    decodeRefl c p = {!!}
+    decodeRefl (inl a) = refl
+    decodeRefl (inr b) = refl
 
     s : (x y : A ⊎ B) → section (encode x y) (decode x y)
-    s x y = {!!}
+    s (inl a) (inl a') = J (λ z q → encode (inl a) (inl z) (cong inl q) ≡ q) (encodeRefl (inl a))
+    s (inr a) (inr a') = J (λ z q → encode (inr a) (inr z) (cong inr q) ≡ q) (encodeRefl (inr a))
 
     r : (x y : A ⊎ B) → retract (encode x y) (decode x y)
-    r x y = {!!}
+    r x y = J (\ y p → decode x y (encode x y p) ≡ p)
+              ((trans $ cong (decode x x) (encodeRefl x)) (decodeRefl x))
 ```
+ 

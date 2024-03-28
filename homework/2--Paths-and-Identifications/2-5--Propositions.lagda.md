@@ -278,10 +278,10 @@ propExt : isProp A → isProp B
         → (A → B) → (B → A)
         → Iso A B
 -- Exercise
-Iso.fun (propExt isPropA isPropB f g) = {!!}
-Iso.inv (propExt isPropA isPropB f g) = {!!}
-Iso.rightInv (propExt isPropA isPropB f g) b = {!!}
-Iso.leftInv (propExt isPropA isPropB f g) a = {!!}
+Iso.fun (propExt isPropA isPropB f g) = f
+Iso.inv (propExt isPropA isPropB f g) = g
+Iso.rightInv (propExt isPropA isPropB f g) b = isPropB (f (g b)) b
+Iso.leftInv (propExt isPropA isPropB f g) a = isPropA (g (f a)) a
 ```
 
 We could in fact show that `A iffP B` is isomorphic to `Iso A B`.
@@ -400,7 +400,7 @@ functions between types to functions between their truncations. If we have a fun
 ```
 ∃-map : (A → B) → (∃ A → ∃ B)
 -- Exercise
-∃-map f = {!!}
+∃-map f = ∃-rec squash (λ x → ∣ f x ∣ )
 ```
 
 When `P` is already a proposition, truncating it should do nothing:
@@ -408,7 +408,24 @@ When `P` is already a proposition, truncating it should do nothing:
 ```
 isProp→equiv∃ : isProp P → Iso P (∃ P)
 -- Exercise
-isProp→equiv∃ isPropP = ?
+isProp→equiv∃ {P = P} isPropP = propExt isPropP squash ∣_∣ (∃-rec isPropP \ x → x)
+-- isProp→equiv∃ {P = P} isPropP = iso f g s r
+--   where
+--     f : P → ∃ P 
+--     f x = ∣ x ∣
+
+--     g : ∃ P → P
+--     g ∣ x ∣ = x
+--     g (squash x y i) = isPropP (g x) (g y) i
+
+--     s : section f g 
+--     s x = {!   !}
+--     -- s ∣ x ∣ = refl
+--     -- s (squash x y i) j = {!  squash x y  !}
+
+--     r : retract f g
+--     r x = refl
+
 ```
 
 If `P : A → Type` is a family of propositions on `A` --- that is, a
@@ -451,6 +468,19 @@ there exists an element in `A ⊎ B`.
 ```
 _orP_ : Type ℓ → Type ℓ' → Type _
 A orP B = ∃ (A ⊎ B)
+```
+
+```
+BAut : (X : Type ℓ) (x : X) → Type ℓ
+BAut X x = Σ[ y ∈ X ] ∥ x ≡ y ∥
+-- singl x = Σ[ y ∈ X ] (x ≡ y) 
+
+
+TwoElementSet : Type _
+TwoElementSet = BAut _ Bool -- Σ[ F ∈ Type ] ∥ Bool ≡ F ∥
+
+TotallyOrderedTwoElementSet : Type _
+TotallyOrderedTwoElementSet = Σ[ F ∈  Type ] (Bool ≡ F)
 ```
 
 Challenge:

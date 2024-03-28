@@ -20,6 +20,7 @@ private
 * Singletons and contractibility;
   * Definition
   * Singletons are contractible.
+  * The substitution lemmas.
 * Equivalences
 
 A singleton is a type consisting of just one element. In set theory,
@@ -87,10 +88,11 @@ Super Hint: It's exactly the connection square
 -}
 isContrSingl : (a : A) → isContr (singl a)
 -- Exercise
+-- isContrSingl a = ?
 isContrSingl a = (a , refl) , contract
   where
     contract : (y : singl a) → (a , refl) ≡ y
-    contract (x , p) = {!!}
+    contract (x , p) i = p i ,  λ j → p (i ∧ j)
 ```
 
 We show that our type `⊤`, which was defined to have only a single
@@ -99,7 +101,8 @@ element `tt : ⊤`, is contractible.
 ```
 isContr⊤ : isContr ⊤
 -- Exercise
-isContr⊤ = {!!}
+-- isContr⊤ = ?
+isContr⊤ = tt , λ {tt → refl}
 ```
 
 Any two contractible types are isomorphic. As a corollary, any
@@ -109,7 +112,10 @@ contractible type is isomorphic to `⊤`.
 isContr→Iso : {A : Type ℓ} {B : Type ℓ'} → isContr A → isContr B → Iso A B
 -- Exercise
 -- isContr→Iso c c' = ?
-isContr→Iso c c' = {!!}
+isContr→Iso c c' = iso (λ _ → center c')
+                       (λ _ → center c)
+                       (contraction c')
+                       (contraction c)
 
 isContrIso⊤ : {A : Type}  → isContr A → Iso A ⊤
 isContrIso⊤ c = isContr→Iso c isContr⊤
@@ -119,9 +125,17 @@ We can show that the converse is true: if `A` is isomorphic to `⊤`,
 then it is contractible.
 
 ```
-iso⊤IsContr : {A : Type ℓ} → Iso A ⊤ → isContr A
+Iso⊤IsContr : {A : Type ℓ} → Iso A ⊤ → isContr A
 -- Exercise
-iso⊤IsContr the-iso = {!!}
+{-
+Iso⊤IsContr iso = {!!}
+  where
+    f = Iso.fun iso
+    g = Iso.inv iso
+    s = Iso.rightInv iso
+    r = Iso.leftInv iso
+-}
+Iso⊤IsContr the-iso = (g tt , λ y → trans (cong g (snd isContr⊤ (f y))) (r y))
   where
     f = Iso.fun the-iso
     g = Iso.inv the-iso
@@ -134,11 +148,14 @@ We can show that there is in fact a unique map from `∅` to any type.
 ```
 ∅-rec-unique : {A : Type ℓ} → isContr (∅ → A)
 -- ∅-rec-unique = ?
-∅-rec-unique = {!!}
+
+∅-rec-unique = ∅-rec , λ f → funExt (pointwise f)
+  where pointwise : (f : ∅ → A) (x : ∅) → ∅-rec x ≡ f x
+        pointwise f ()
 ```
 
-
-As a useful lemma, we can show that a retract of a contractible type must be contractible.
+As a useful lemma, we can show that a retract of a contractible type
+must be contractible.
 ```
 isContrRetract
   : ∀ {A : Type ℓ} {B : Type ℓ'}
@@ -147,21 +164,27 @@ isContrRetract
   → (v : isContr B) → isContr A
 -- Exercise
 -- Hint: You'll need transitivity of paths.
-fst (isContrRetract f g h (b , p)) = {!!} 
-snd (isContrRetract f g h (b , p)) = {!!} 
+-- isContrRetract f g h (b , p) = ?
+fst (isContrRetract f g h (b , p)) = g b
+snd (isContrRetract f g h (b , p)) x = trans (cong g (p (f x))) (h x)
 ```
 
-And we can show that if `B : A → Type` is a family of contractible types depending on `A`, then the type `(a : A) → B a` of functions is contractible.
+And we can show that if `B : A → Type` is a family of contractible
+types depending on `A`, then the type `(a : A) → B a` of functions is
+contractible.
 ```
 isContrFun : ∀ {A : Type ℓ} {B : A → Type ℓ}
            → ((a : A) → isContr (B a))
            → isContr ((a : A) → B a)
 -- Exercise
-fst (isContrFun c) = {!!}
-snd (isContrFun c) f i a = {!!}
+-- fst (isContrFun c) = ?
+-- snd (isContrFun c) f i a = ?
+fst (isContrFun c) = center ∘ c
+snd (isContrFun c) f i a = contraction (c a) (f a) i
 ```
 
-In particular, there is a unique map `A → ⊤`.
+In particular, the map `A → ⊤` (which always exists as the constant
+map at `tt`) is unique.
 
 ## Equivalences
 
@@ -202,8 +225,8 @@ isBijection≡isEquiv : {A B : Type ℓ} (f : A → B) → isBijection f ≡ isE
 isBijection≡isEquiv f = refl
 ```
 
-We will use the syntax `A ≃ B` (≃ is input as \simeq) for the type of
-equivalences between `A` and `B`.
+We will use the syntax `A ≃ B` for the type of equivalences between
+`A` and `B`. (The symbol `≃` is input as `\simeq`.)
 
 ```
 infix 4 _≃_
@@ -224,10 +247,11 @@ singl' {A = A} a = Σ[ x ∈ A ] (x ≡ a)
 
 isContrSingl' : {A : Type} (a : A) → isContr (singl' a)
 -- Exercise
+-- contract (x, p) = ?
 isContrSingl' a = (a , refl) , contract
   where
     contract : (y : singl' a) → (a , refl) ≡ y
-    contract (x , p) i = {!!}
+    contract (x , p) i = p (~ i) , λ j → p ((~ i) ∨ j)
 
 idIsEquiv : (A : Type) → isEquiv (idfun A)
 idIsEquiv A = λ y → isContrSingl' y
@@ -236,7 +260,6 @@ idEquiv : (A : Type) → A ≃ A
 idEquiv A = idfun A , idIsEquiv A
 ```
 
-
 From any equivalence, we can extract an isomorphism.
 ```
 inv : {A B : Type} → A ≃ B → B → A
@@ -244,13 +267,15 @@ inv e b = fst (center (snd e b))
 
 equivToIso : {A B : Type} → A ≃ B → Iso A B
 -- Exercise
+-- s e = ?
+-- r e = ?
 equivToIso e = iso (fst e) (inv e) (s e) (r e)
   where
     s : (e : A ≃ B) → section (fst e) (inv e)
-    s (e , is-equiv) y = {!!}
+    s (e , is-equiv) y = is-equiv y .fst .snd
 
     r : (e : A ≃ B) → retract (fst e) (inv e)
-    r (e , is-equiv) x i = {!!}
+    r (e , is-equiv) x i = contraction (is-equiv (e x)) (x , refl) i .fst
 ```
 
 There is in fact a way to turn an iso into an equivalence as well, but
@@ -258,7 +283,12 @@ it is much more involved. We will take it as a black box for now, and
 later import it from the cubical library.
 
 ```
--- isoToIsEquiv : (f : Iso A B) → isEquiv (Iso.fun f)
+postulate
+  isoToIsEquiv : (f : Iso A B) → isEquiv (Iso.fun f)
+
+isoToEquiv : Iso A B → A ≃ B
+fst (isoToEquiv f) = Iso.fun f
+snd (isoToEquiv f) = isoToIsEquiv f
 ```
 
 You might naturally wonder if `Iso A B` and `A ≃ B` are themselves
@@ -280,7 +310,6 @@ On the other hand, no matter how complicated the type `X` is,
 identity function is an equivalence in exactly one way. We will show
 this in Part 2-5.
 
-
 ## Relations
 
 A (type-valued) *relation* between two types `A` and `B` is a type
@@ -297,7 +326,9 @@ Rel {ℓ} {ℓ'} A B = A → B → Type (ℓ-max ℓ ℓ')
 ```
 
 Any function `f : A → B` induces a relation `graph f : Rel A B` known
-as the graph of `f`.
+as the graph of `f`. You might be familiar with the graph of a
+function as defined in ordinary math: this is the subset of $A × B$ so
+where $f(a) = b$.
 
 ```
 graph : {A B : Type ℓ} → (A → B) → Rel A B
@@ -320,7 +351,7 @@ The graph of a function is a functional relation --- hence the name.
 isFunctionalGraph : {A B : Type ℓ} (f : A → B) → isFunctional (graph f)
 -- Exercise:
 -- isFuncationalGraph f a = ?
-isFunctionalGraph f a = {!!}
+isFunctionalGraph f a = isContrSingl (f a)
 ```
 
 On the other hand, any functional relation gives rise to a function.
@@ -329,7 +360,7 @@ isFunctional→Fun : {A B : Type ℓ} (R : Rel A B) (c : isFunctional R)
                  → A → B
 -- Exercise:
 -- isFunctional→Fun R c a = ?
-isFunctional→Fun R c a = {!!}
+isFunctional→Fun R c a = fst (center (c a))
 ```
 
 We can show that the function we extract out of the graph of a
@@ -339,12 +370,13 @@ section-isFunctionalGraph→Fun : {A B : Type} (f : A → B)
       → isFunctional→Fun (graph f) (isFunctionalGraph f) ≡ f
 -- Exercise:v
 -- section-isFunctionalGraph→Fun f = ?
-section-isFunctionalGraph→Fun f = {!!}
+section-isFunctionalGraph→Fun f = refl
 ```
 
-We can show that, in the other direction, we get an isomorphism
-between `R a b` and `(graph (isFunctional→Fun R c)) a b` whenever `R`
-is a functional relation. But we don't have quite the tools yet, we'll have to revisit it in the next lecture.
+In the other direction, we get an isomorphism between `R a b` and
+`(graph (isFunctional→Fun R c)) a b` whenever `R` is a functional
+relation. We don't quite have the tools yet to prove this, we'll have
+to revisit it in the next lecture.
 
 For every relation `R : Rel A B`, we have a relation `flip R : Rel B A`
 defined by `(flip R) b a = R a b`. A relation is said to be a
@@ -361,13 +393,16 @@ isOneToOne : {A B : Type} (R : Rel A B) → Type _
 isOneToOne R = isFunctional R × isFunctional (flip R)
 ```
 
-If `e : A ≃ B` is an equivalence, then its graph is a one-to-one correspondence.
+If `e : A ≃ B` is an equivalence, then its graph is a one-to-one
+correspondence.
+
 ```
 graphEquivIsOneToOne : {A B : Type} (e : A ≃ B)
                      → isOneToOne (graph (fst e))
 -- Exercise
 -- graphEquivIsOneToOne e = ?
-graphEquivIsOneToOne (e , p) = {!!}
+graphEquivIsOneToOne (e , p) = (isFunctionalGraph e) , p
 ```
 
-We can also go the other way, but we'll need a few more tools in our toolbelt.
+It is also possible to go the other way, but again we'll come back to
+this.

@@ -76,8 +76,10 @@ nothing = ∅-rec
 
 Now, you might wonder at the utility of these definitions. After all,
 if `φ` is `true`, then `BooleanPartial φ A` is `⊤ → A`, which is
-isomorphic to `A`. If `φ` is `false`, then `BooleanPartial φ A` is `∅
-→ A`, which is isomorphic to `⊤`. In other words, this type is either
+isomorphic to `A`.
+If `φ` is `false`, then `BooleanPartial φ A` is `∅
+→ A`, which is isomorphic to `⊤`.
+In other words, this type is either
 isomorphic to `A` or `⊤`, depending on whether or not `φ` is `true` or
 `false` --- what's the big deal?
 
@@ -142,9 +144,9 @@ zero ≤ m = true
 suc n ≤ zero = false
 suc n ≤ suc m = n ≤ m
 
-take : (n : ℕ) (L : List A) → BooleanPartial (n ≤ length L) (List A)
--- Exercise
-take n L = {!!}
+-- take : (n : ℕ) (L : List A) → BooleanPartial (n ≤ length L) (List A)
+-- -- Exercise
+-- take n L = {!!}
 ```
 
 ## Partial elements
@@ -262,7 +264,7 @@ Try it yourself: describe a formula which gives the two sides of a box
 ```
 sides-of-square : I → I → I
 -- Exercise
-sides-of-square i j = {!!}
+sides-of-square i j = i ∨ ~ i
 ```
 
 How about a three dimensional example. Come up with a formula to
@@ -287,7 +289,10 @@ of the sides.
 ```
 exercise-shape : I → I → I → I
 -- Exercise
-exercise-shape i j k = {!!}
+exercise-shape i j k = ∂ i ∨ ~ j ∨ ~ k
+
+exercise-shape-wireframe : I → I → I → I
+exercise-shape-wireframe i j k = ((∂ i) ∧ (∂ j ∨ ∂ k)) ∨ ((~ j) ∧ (∂ i ∧ ∂ k)) ∨ (~ k) ∧ (∂ i ∨ ∂ j)
 ```
 
 ## Extensibility and Composition
@@ -350,7 +355,7 @@ Here, the sides of the box are a partial path in the context of
           x         y          ∙ — >
                                  i
 ```
-doubleComp-sides : {x y z w : A } (r : x ≡ w) (q : y ≡ z)
+doubleComp-sides : {x y z w : A } (r : w ≡ x) (q : y ≡ z)
                    (i j : I) → Partial (∂ i) A
 -- doubleComp-faces r q is a partial square defined only on ∂ i
 doubleComp-sides r q i j (i = i0) =
@@ -462,7 +467,7 @@ Path-ish {A} endpoints = (i : I) → A [ ∂ i ↦ endpoints i ]
 Given a partial element `e : (i : I) → Partial (∂ i) A` defined only
 when `i = i0` or `i = i1` --- the endpoints of our path --- we get a
 "strict set" (element of `SSet`) consisting of the functions
-`p : I → A" where by definition `p i0 = endpoints i0` and
+`p : I → A` where by definition `p i0 = endpoints i0` and
 `p i1 = endpoints i1`.
 
 The path type isn't exactly the same thing as our `Path-ish` above,
@@ -581,7 +586,7 @@ already know fillers for all the remaining sides.
         |  ?  /             |     /
         |   /               |   /  ?
         | /                 | /
-        ? - - - - - - - - > ?
+        x - - - - - - - - > ?
                   ?
 
 We can make some educated guesses about what will work as the bottom
@@ -616,13 +621,13 @@ one.)
 ```
 diamondFaces : {x y z : A} (p : x ≡ y) (q : y ≡ z) → (i : I) → (j : I) → I → Partial (∂ i ∨ ∂ j) A
 -- Exercise
-diamondFaces p q i j k (i = i0) = {!!}
-diamondFaces p q i j k (i = i1) = {!!}
-diamondFaces p q i j k (j = i0) = {!!}
-diamondFaces p q i j k (j = i1) = {!!}
+diamondFaces p q i j k (i = i0) = p j
+diamondFaces p q i j k (i = i1) = q (j ∧ k)
+diamondFaces p q i j k (j = i0) = p i
+diamondFaces p q i j k (j = i1) = q (i ∧ k)
 
 -- Exercise
-diamond p q i j = hcomp (diamondFaces p q i j) {!!}
+diamond p q i j = hcomp (diamondFaces p q i j) (p (i ∨ j))
 ```
 
 This is not the only way to do it! The composition problems that
@@ -649,13 +654,13 @@ same `diamond` square, but using the following cube:
 ```
 diamondFacesAlt : {x y z : A} (p : x ≡ y) (q : y ≡ z) → (i : I) → (j : I) → I → Partial (∂ i ∨ ∂ j) A
 -- Exercise
-diamondFacesAlt p q i j k (i = i0) = {!!}
-diamondFacesAlt p q i j k (i = i1) = {!!}
-diamondFacesAlt p q i j k (j = i0) = {!!}
-diamondFacesAlt p q i j k (j = i1) = {!!}
+diamondFacesAlt p q i j k (i = i0) = p (j ∧ k)
+diamondFacesAlt p q i j k (i = i1) = compPath-filler p q j k
+diamondFacesAlt p q i j k (j = i0) = p (i ∧ k)
+diamondFacesAlt p q i j k (j = i1) = compPath-filler p q i k
 
 diamondAlt : (p : x ≡ y) (q : y ≡ z) → Square p q p q
-diamondAlt {x = x} p q i j = {!!}
+diamondAlt {x = x} p q i j = hcomp (diamondFacesAlt p q i j) x
 ```
 
 Let's set about proving associativity for path composition. To prove
@@ -682,14 +687,14 @@ cube whose top face is the path-between-paths that we want.
 ```
 assoc-faces : {w x y z : A} (r : w ≡ x) (p : x ≡ y) (q : y ≡ z) → (i : I) → (j : I) → (k : I) → Partial (∂ i ∨ ∂ j) A
 -- Exercise
-assoc-faces         r p q i j k (i = i0) = {!!}
-assoc-faces         r p q i j k (i = i1) = {!!}
-assoc-faces {w = w} r p q i j k (j = i0) = {!!}
-assoc-faces         r p q i j k (j = i1) = {!!}
+assoc-faces         r p q i j k (i = i0) = (r ∙  (compPath-filler p q k)) j
+assoc-faces         r p q i j k (i = i1) = compPath-filler (r ∙ p) q k j
+assoc-faces {w = w} r p q i j k (j = i0) = w
+assoc-faces         r p q i j k (j = i1) = q k
 
 assoc-base : {w x y z : A} (r : w ≡ x) (p : x ≡ y) (q : y ≡ z) → Square (r ∙ p) (r ∙ p) refl refl
 -- Exercise
-assoc-base r p q i j = {!!}
+assoc-base r p q i j = (r ∙ p) j
 
 assoc : (r : w ≡ x) (p : x ≡ y) (q : y ≡ z)
   → r ∙ (p ∙ q) ≡ (r ∙ p) ∙ q
@@ -719,7 +724,7 @@ To cancel on the left we have to build another cube.
          p  /   |               /  refl ∙ p
           /     |             /     |
         x - - - - - - - - > x       |
-        ^       |           ^       |                    ^   j
+        ^       |           ^       | p                  ^   j
         |       |           |       |                  k | /
         |       |           |       |                    ∙ — >
         |       |   sym p   |       |                      i
@@ -734,15 +739,15 @@ The faces are straightforward to construct if you stare at the diagram.
 Rather nicely, `hcomps` are *uniform*. That means that if we do an `hcomp` on some shape and then restrict to a subshape, the result is the same as restricting and doing the `hcomp` there. In the above cube, since the `i = i1` face is exactly the square from the `hcomp` defining `refl ∙ p`, we can omit it from our final `hcomp`.
 ```
 lUnit-faces : {x y : A} (p : x ≡ y) → (i : I) → (j : I) → (k : I) → Partial (~ i ∨ ∂ j) A
-lUnit-faces         p i j k (i = i0) = {!!} -- Constant in the `j` direction
+lUnit-faces         p i j k (i = i0) = p j -- Constant in the `j` direction
 -- We can omit the (i = i1) direction, since it will be filled in
 -- by the appropriate value
-lUnit-faces {x = x} p i j k (j = i0) = {!!} -- Completely constant
-lUnit-faces         p i j k (j = i1) = {!!} -- Constructed from `p` using connections
+lUnit-faces {x = x} p i j k (j = i0) = x -- Completely constant
+lUnit-faces         p i j k (j = i1) = p (~ i ∨ k) -- Constructed from `p` using connections
 
 lUnit-base : {x y : A} (p : x ≡ y) → Square p refl refl (sym p)
 -- Hint: Constructed from `p` using connections in a different way
-lUnit-base p i j = {!!}
+lUnit-base p i j = p (~ i ∧ j)
 
 lUnit : (p : x ≡ y) → p ≡ refl ∙ p
 lUnit {x = x} p i j = hcomp (lUnit-faces p i j) (lUnit-base p i j)
@@ -750,9 +755,43 @@ lUnit {x = x} p i j = hcomp (lUnit-faces p i j) (lUnit-base p i j)
 
 Here's an open ended problem that requires using two `hcomps`. Try and figure out what boxes you should try and close off to solve it.
 
+                      b - - - - - - - - > b
+                    / ^                 / ^
+              cp  /   |            p  /   |
+                /     |             /     |
+              a - - - - - - - - > a       | 
+              ^       |           ^       | cb                 ^   j
+              |    cb |           |       |                  k | /
+              |       |           | ca    |                    ∙ — >
+              |       |           |       |                      i
+           ca |       c - - - - - | - - > c
+              |     /             |     /
+              |   /               |   /  
+              | /                 | /
+              c - - - - - - - - > c
+                        
+
 ```
 isContrisContr≡ : {A : Type ℓ} (c : isContr A) (a b : A) → isContr (a ≡ b)
 -- Hint: You should use an `hcomp` for both halves. Draw them out!
 -- Hint 2: In the second component, you only need three sides of a cube.
-isContrisContr≡ (c₀ , c) a b = {!!} , {!!}
+isContrisContr≡ {A = A} (c₀ , c) a b = cp , λ p i j → hcomp (faces p i j) c₀
+  where
+    cp : a ≡ b
+    cp = sym (c a) ∙∙ refl ∙∙ c b
+    -- cp i = hcomp (λ { j (i = i0) → (c a) j
+    --                 ; j (i = i1) → (c b) j
+    --                 }) c₀
+
+    -- cp = refl ∙∙ (sym (c a)) ∙∙ (c b)
+    -- cp = sym (c a) ∙ c b
+
+    faces : (p : a ≡ b) → (i : I) → (j : I) → (k : I) → Partial (i ∨ ∂ j) A
+    faces p i j k (i = i1) = c (p j) k
+    faces p i j k (j = i0) = (c a) k
+    faces p i j k (j = i1) = (c b) k
+```
+
+
+```
 ```
